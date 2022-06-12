@@ -1,0 +1,35 @@
+{
+  "name": "backendv1.0",
+  "version": "1.0.0",
+  "description": "Waridi Real Estate",
+  "main": "index.ts",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Waridi-RE/backendv1.0.git"
+  },
+  "keywords": [
+    "WRE"
+  ],
+  "author": "James Masika Wabuya",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Waridi-RE/backendv1.0/issues"
+  },
+  "homepage": "https://github.com/Waridi-RE/backendv1.0#readme",
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "config": "^3.3.7",
+    "jsonwebtoken": "^8.5.1",
+    "redis": "^4.1.0",
+    "ts-node-dev": "^2.0.0",
+    "zod": "^3.17.3"
+  },
+  "devDependencies": {
+    "@types/config": "^0.0.41",
+    "@types/jsonwebtoken": "^8.5.8",
+    "typescript": "^4.7.3"
+  }
+}
