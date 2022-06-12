@@ -1,0 +1,2 @@
+//Remove cached gitignore folder
+git rm -r --cached
