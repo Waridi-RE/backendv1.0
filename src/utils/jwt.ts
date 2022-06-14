@@ -15,3 +15,19 @@ export const signJwt = (
         algorithm: 'RS256'
     });
 };
+
+export const verifyToken = <T>(
+  token: string,
+  keyName: 'accessTokenPublicKey' | 'refreshTokenPublicKey'
+): T | null => {
+   try {
+     const publicKey = Buffer.from(
+         config.get<string>(keyName),
+         'base64'
+     ).toString('ascii');
+     const decoded = jwt.verify(token, publicKey) as T;
+       return decoded;
+   } catch (error) {
+      return null;
+   }
+};
