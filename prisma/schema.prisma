@@ -12,7 +12,7 @@ model User{
     @@map(name: "users")
 
     id String @id @default(uuid())
-    name String @db @db.VarChar(255)
+    name String @db.VarChar(255)
     email String @unique
     photo String? @default("default.png")
     verified Boolean? @default(false)
