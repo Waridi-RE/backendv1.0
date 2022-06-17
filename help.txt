@@ -1,6 +1,18 @@
 //Remove cached gitignore folder
 git rm -r --cached
 
+//Creates a basic prisma setup with prisma cli
+npx prisma init --datasource-provider postgresql
+
+
+//Create migrations with prisma #Docker should be up
+npx prisma migrate dev --name user-entity --create-only
+
+//Create table in the database
+npx prisma db push
+
 //Repository
 github.com/wpcodevo
+
+
 

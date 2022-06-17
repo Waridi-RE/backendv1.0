@@ -7,3 +7,5 @@ export const createUser = async(input:  Prisma.UserCreateInput) => {
         data: input,
     })) as User;
  };
+
+export const findUser 
