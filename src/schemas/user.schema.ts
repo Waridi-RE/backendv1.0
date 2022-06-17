@@ -41,6 +41,12 @@ export const loginUserSchema = object({
       }).min(8, 'Invalid email or password'),
     }),
   });
+
+export const verifyEmailSchema = object({
+  params: object({
+    verificationCode: string(),
+  })
+})  
   
   export const updateUserSchema = object({
     body: object({
@@ -66,3 +72,4 @@ export const loginUserSchema = object({
 
 export type LoginUserInput = TypeOf<typeof loginUserSchema>['body'];
 export type UpdateUserInput = TypeOf<typeof updateUserSchema>['body'];
+export type VerifyEmailInput = TypeOf<typeof verifyEmailSchema>['params'];
