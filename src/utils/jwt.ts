@@ -16,7 +16,7 @@ export const signJwt = (
     });
 };
 
-export const verifyToken = <T>(
+export const verifyJwt = <T>(
   token: string,
   keyName: 'accessTokenPublicKey' | 'refreshTokenPublicKey'
 ): T | null => {

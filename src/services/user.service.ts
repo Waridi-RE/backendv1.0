@@ -32,6 +32,20 @@ export const createUser = async(input:  Prisma.UserCreateInput) => {
      )
  }
 
+ export const findUniqueUser = async (
+     where: Prisma.UserWhereUniqueInput,
+     select?: Prisma.UserSelect
+
+ ) => {
+       return( await prisma.user.findUnique(
+
+       
+           {
+               where,
+               select
+           }
+       )) as User;
+ }
 
  export const signTokens = async(user: Prisma.UserCreateInput) => {
       //1. Create Session

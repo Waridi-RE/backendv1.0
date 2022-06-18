@@ -4,14 +4,17 @@ import config from 'config';
 import {CookieOptions, NextFunction, Request, Response} from 'express';
 import {
     createUser,
+    findUniqueUser,
     findUser,
     updateUser
 } from '../services/user.service';
 import AppError from '../utils/appError';
+import { signJwt, verifyJwt } from '../utils/jwt';
 
-import { RegisterUserInput, VerifyEmailInput } from '../schemas/user.schema';
+import { LoginUserInput, RegisterUserInput, VerifyEmailInput } from '../schemas/user.schema';
 import Email from '../utils/email';
 import { Prisma } from '@prisma/client';
+import redisClient from '../utils/connectRedis';
 
 const cookiesOptions: CookieOptions ={
     httpOnly: true,
@@ -80,6 +83,80 @@ export const registerUserHandler = async(
       }
       next(err);
   }
+};
+
+export const loginUserHandler = async (
+    req: Request<{}, {},  LoginUserInput>,
+    res: Response,
+    next: NextFunction
+) => {
+   try {
+       const {email, password} = req.body;
+       const user = await findUniqueUser(
+           {email: email.toLowerCase()},
+           {id: true, email: true, verified:  true, password: true}
+       );
+       if(!user){
+           return next(new AppError(400, 'Invalid email or password'));
+       }
+   } catch (err: any) {
+       next(err);
+   }
+}; 
+
+export const refreshAccessTokenHandler = async(
+   req: Request,
+   res: Response,
+   next: NextFunction
+
+) => {
+   try {
+       const refresh_token = req.cookies.refresh_token;
+       const message = 'Could not refresh access token';
+       if(!refresh_token){
+            return next(new AppError(403, message));
+       }
+       //Validate refresh token
+       const decoded = verifyJwt<{sub: string}>(
+         refresh_token,
+         'refreshTokenPublicKey'
+       );
+       if(!decoded){
+           return next(new AppError(403, message));
+       }
+
+       //Check if user has a valid session
+       const session = await redisClient.get(decoded.sub);
+       if(!session){
+           return next(new AppError(403, message));
+       }
+
+       //Check if user still exist
+       const user = await findUniqueUser({id: JSON.parse(session).id});
+       if(!user){
+           return next(new AppError(403, message));
+       }
+
+       //Sign new access token
+       const access_token = signJwt({sub: user.id}, 'accessTokenPrivateKey', {
+           expiresIn: `${config.get<number>('accessTokenExpiresIn')}m`,
+       });
+
+       //Add Cookies
+       res.cookie('access_token', access_token, accessTokenCookieOptions);
+       res.cookie('logged_in', true, {
+           ...accessTokenCookieOptions,
+           httpOnly: false
+       });
+
+       //Send Response
+       res.status(200).json({
+           status: 'success',
+           access_token
+       });
+   } catch (err: any) {
+       next(err);
+   }
 };
 
 export const verifyEmailHandler = async(
