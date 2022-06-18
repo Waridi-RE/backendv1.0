@@ -6,17 +6,17 @@ import {
 import { validate } from '../middleware/validate';
 import { 
      registerUserSchema,
-     verifyEmailSchema 
+     
     } from '../schemas/user.schema';
 
 const router = express.Router();
 
 router.post('/register', validate(registerUserSchema), registerUserHandler);
 
-router.get(
-    '/verifyemail/:verificationCode',
-    validate(verifyEmailSchema),
-    verifyEmailHandler
-);
+// router.get(
+//     '/verifyemail/:verificationCode',
+//     validate(verifyEmailSchema),
+//     verifyEmailHandler
+// );
 
 export default router;

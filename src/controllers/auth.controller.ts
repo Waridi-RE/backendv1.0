@@ -46,28 +46,28 @@ export const registerUserHandler = async(
           name: req.body.name,
           email: req.body.email.toLowerCase(),
           password: hashedPassword,
-          verificationCode,
+          //verificationCode,
       });
 
-      const redirectUrl = `${config.get<string>(
-              'origin'
-      )}/verifyemail/${verifyCode}`;
-      try{
-          await new Email(user, redirectUrl).sendVerificationCode();
-          await updateUser({id: user.id}, {verificationCode});
+    //   const redirectUrl = `${config.get<string>(
+    //           'origin'
+    //   )}/verifyemail/${verifyCode}`;
+    //   try{
+    //       await new Email(user, redirectUrl).sendVerificationCode();
+    //       await updateUser({id: user.id}, {verificationCode});
 
-          res.status(201).json({
-              status: 'success',
-              message: 'Email with a verification code has been sent to your email',
-          });
-      } catch(error){
-          await updateUser({id: user.id}, {verificationCode: null});
-          return res.status(500).json({
-              status: 'error',
-              message: 'There was an error sending email, please try again',
-          });
+    //       res.status(201).json({
+    //           status: 'success',
+    //           message: 'Email with a verification code has been sent to your email',
+    //       });
+    //   } catch(error){
+    //       await updateUser({id: user.id}, {verificationCode: null});
+    //       return res.status(500).json({
+    //           status: 'error',
+    //           message: 'There was an error sending email, please try again',
+    //       });
 
-      }
+    //   }
 
   } catch (err: any) {
       if(err instanceof Prisma.PrismaClientKnownRequestError){
