@@ -6,7 +6,8 @@ import {
     createUser,
     findUniqueUser,
     findUser,
-    updateUser
+    updateUser,
+    signTokens
 } from '../services/user.service';
 import AppError from '../utils/appError';
 import { signJwt, verifyJwt } from '../utils/jwt';
@@ -26,8 +27,20 @@ if(process.env.NODE_ENV == "production") cookiesOptions.secure = true;
 
 const accessTokenCookieOptions: CookieOptions = {
     ...cookiesOptions,
+    expires: new Date(
+        Date.now() + config.get<number>('accessTokenExpiresIn') * 60 * 1000
+    ),
+    maxAge: config.get<number>('accessTokenExpiresIn') * 60 * 1000
 
-}
+};
+
+const refreshTokenCookieOptions: CookieOptions = {
+    ...cookiesOptions,
+    expires: new Date( 
+        Date.now() + config.get<number> ('refreshTokenExpiresIn') * 60 * 1000,
+    ),
+    maxAge: config.get<number>('refreshTokenExpiresIn') * 60 * 1000,
+};
 
 
 export const registerUserHandler = async(
@@ -94,11 +107,39 @@ export const loginUserHandler = async (
        const {email, password} = req.body;
        const user = await findUniqueUser(
            {email: email.toLowerCase()},
-           {id: true, email: true, verified:  true, password: true}
+           {id: true, email: true, /*verified:  true,*/ password: true}
        );
        if(!user){
            return next(new AppError(400, 'Invalid email or password'));
        }
+
+       //Check if user is verified
+    //    if(!user.verified){
+    //         return next(
+    //             new AppError(
+    //                  401,
+    //                  'You are not verified, Please verify your email'
+    //             )
+    //         );
+    //    }
+
+       if(!user || !(await bcrypt.compare(password, user.password))){
+           return next(new AppError(400, 'Invalid email or password'));
+       }
+
+       //Sign Tokens
+       const {access_token, refresh_token} = await signTokens(user);
+       res.cookie('access_token', access_token, accessTokenCookieOptions);
+       res.cookie('refresh_token', refresh_token, refreshTokenCookieOptions);
+       res.cookie('logged_in', true, {
+           ...accessTokenCookieOptions,
+           httpOnly: false,
+       });
+       res.status(200).json({
+           status: 'success',
+           access_token
+       });
+       
    } catch (err: any) {
        next(err);
    }
