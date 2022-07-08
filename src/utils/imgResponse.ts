@@ -9,3 +9,5 @@ const imgResponse = (urlList: any) => {
     response+= `<br> <p>Now You Can Store This Url in Database</p>`
     return response
 }
+
+export default imgResponse;

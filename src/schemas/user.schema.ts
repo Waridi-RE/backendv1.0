@@ -65,6 +65,8 @@ export const verifyEmailSchema = object({
       }),
   });
   
+
+  
   export type RegisterUserInput = Omit<
   TypeOf<typeof registerUserSchema>['body'],
   'passwordConfirm'
