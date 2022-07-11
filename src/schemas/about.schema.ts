@@ -28,7 +28,7 @@ export const aboutUserSchema = object({
 }) 
 
 
-export const landlordSchema = object({
+export const LandLordInput = object({
   body: object({
     first_name: string({
         required_error: 'Please Enter Your First Name'
@@ -57,3 +57,4 @@ export const landlordSchema = object({
 })
 
 export type AboutUserSchema = TypeOf<typeof aboutUserSchema>['body'];
+export type LandLordInput = TypeOf<typeof LandLordInput>['body']
