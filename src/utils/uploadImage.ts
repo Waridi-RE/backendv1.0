@@ -1,5 +1,13 @@
+require('dotenv').config();
 import cloudinary from "cloudinary";
 import fs from "fs";
+
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+   client_secret: process.env.CLOUDINARY_API_SECRET
+       
+})
 
 const uploadImage = async(locaFilePath: any) => {
     //Path of image which was last uploaded to cloudinary

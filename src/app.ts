@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import validateEnv from './utils/validateEnv';
 import authRouter from './routes/auth.routes';
 import landlordRouter from './routes/landlord.routes';
+import imageRouter from './routes/image.routes';
 import AppError from './utils/appError';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
@@ -40,6 +41,7 @@ async function bootstrap() {
     //Routes
   app.use('/api/auth', authRouter);
   app.use('/api/landlord', landlordRouter);
+  app.use('/api/image', imageRouter);
 
       // Testing
   app.get('/api/healthchecker', (_, res: Response) => {
