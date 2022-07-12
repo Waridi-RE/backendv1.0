@@ -1,26 +1,26 @@
-import { PrismaClient, Prisma, User } from "@prisma/client";
+import { PrismaClient, Prisma, Landlord } from "@prisma/client";
 import config from "config";
 import redisClient from "../utils/connectRedis";
 
 const prisma = new PrismaClient();
 
 
-export const createLandlord = async (input: Prisma.UserCreateInput) => {
+export const createLandlord = async (input: Prisma.LandlordCreateInput) => {
    return(
-    await prisma.user.create({
-        data: input
-    })) as User;
+       await prisma.landlord.create({
+           data: input
+       })) as Landlord;
 };
 
 export const getLandlord = async(
-    where: Partial<Prisma.UserCreateInput>,
-    select?: Prisma.UserSelect) => {
+    where: Partial<Prisma.LandlordCreateInput>,
+    select?: Prisma.LandlordSelect) => {
     return(
-        await prisma.user.findFirst({
+        await prisma.landlord.findFirst({
             where,
             select
         })
-    ) as User
+    ) as Landlord
 }
 
 
@@ -35,12 +35,12 @@ export const findUniqueLandlord = async (
                 where,
                 select
 })
-        ) as User
+        ) as Landlord
 } 
 
-export const signTokens = (user: Prisma.UserCreateInput) => {
-    //Create Session
-    redisClient.set(`${user.id}`, JSON.stringify(user),{
-        EX: config.get<number>('redisCacheExpiresIn') * 60
-    })
-}
+// export const signTokens = (user: Prisma.UserCreateInput) => {
+//     //Create Session
+//     redisClient.set(`${us}`, JSON.stringify(user),{
+//         EX: config.get<number>('redisCacheExpiresIn') * 60
+// //     })
+// }

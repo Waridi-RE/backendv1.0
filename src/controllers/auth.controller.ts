@@ -7,7 +7,7 @@ import {
     findUniqueUser,
     findUser,
     updateUser,
-    signTokens
+    // signTokens
 } from '../services/user.service';
 import AppError from '../utils/appError';
 import { signJwt, verifyJwt } from '../utils/jwt';
@@ -128,16 +128,16 @@ export const loginUserHandler = async (
        }
 
        //Sign Tokens
-       const {access_token, refresh_token} = await signTokens(user);
-       res.cookie('access_token', access_token, accessTokenCookieOptions);
-       res.cookie('refresh_token', refresh_token, refreshTokenCookieOptions);
+    //    const {access_token, refresh_token} = await signTokens(user);
+    //    res.cookie('access_token', access_token, accessTokenCookieOptions);
+    //    res.cookie('refresh_token', refresh_token, refreshTokenCookieOptions);
        res.cookie('logged_in', true, {
-           ...accessTokenCookieOptions,
+        //    ...accessTokenCookieOptions,
            httpOnly: false,
        });
        res.status(200).json({
            status: 'success',
-           access_token
+        //    access_token
        });
        
    } catch (err: any) {
@@ -145,60 +145,60 @@ export const loginUserHandler = async (
    }
 }; 
 
-export const refreshAccessTokenHandler = async(
-   req: Request,
-   res: Response,
-   next: NextFunction
+// export const refreshAccessTokenHandler = async(
+//    req: Request,
+//    res: Response,
+//    next: NextFunction
 
-) => {
-   try {
-       const refresh_token = req.cookies.refresh_token;
-       const message = 'Could not refresh access token';
-       if(!refresh_token){
-            return next(new AppError(403, message));
-       }
-       //Validate refresh token
-       const decoded = verifyJwt<{sub: string}>(
-         refresh_token,
-         'refreshTokenPublicKey'
-       );
-       if(!decoded){
-           return next(new AppError(403, message));
-       }
+// ) => {
+//    try {
+//        const refresh_token = req.cookies.refresh_token;
+//        const message = 'Could not refresh access token';
+//        if(!refresh_token){
+//             return next(new AppError(403, message));
+//        }
+//        //Validate refresh token
+//        const decoded = verifyJwt<{sub: string}>(
+//          refresh_token,
+//          'refreshTokenPublicKey'
+//        );
+//        if(!decoded){
+//            return next(new AppError(403, message));
+//        }
 
-       //Check if user has a valid session
-       const session = await redisClient.get(decoded.sub);
-       if(!session){
-           return next(new AppError(403, message));
-       }
+//        //Check if user has a valid session
+//        const session = await redisClient.get(decoded.sub);
+//        if(!session){
+//            return next(new AppError(403, message));
+//        }
 
-       //Check if user still exist
-       const user = await findUniqueUser({id: JSON.parse(session).id});
-       if(!user){
-           return next(new AppError(403, message));
-       }
+//        //Check if user still exist
+//        const user = await findUniqueUser({id: JSON.parse(session).id});
+//        if(!user){
+//            return next(new AppError(403, message));
+//        }
 
-       //Sign new access token
-       const access_token = signJwt({sub: user.id}, 'accessTokenPrivateKey', {
-           expiresIn: `${config.get<number>('accessTokenExpiresIn')}m`,
-       });
+//        //Sign new access token
+//        const access_token = signJwt({sub: user.id}, 'accessTokenPrivateKey', {
+//            expiresIn: `${config.get<number>('accessTokenExpiresIn')}m`,
+//        });
 
-       //Add Cookies
-       res.cookie('access_token', access_token, accessTokenCookieOptions);
-       res.cookie('logged_in', true, {
-           ...accessTokenCookieOptions,
-           httpOnly: false
-       });
+//        //Add Cookies
+//        res.cookie('access_token', access_token, accessTokenCookieOptions);
+//        res.cookie('logged_in', true, {
+//            ...accessTokenCookieOptions,
+//            httpOnly: false
+//        });
 
-       //Send Response
-       res.status(200).json({
-           status: 'success',
-           access_token
-       });
-   } catch (err: any) {
-       next(err);
-   }
-};
+//        //Send Response
+//        res.status(200).json({
+//            status: 'success',
+//            access_token
+//        });
+//    } catch (err: any) {
+//        next(err);
+//    }
+// };
 
 export const verifyEmailHandler = async(
     req: Request<VerifyEmailInput>,

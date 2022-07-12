@@ -1,7 +1,7 @@
 import express from 'express';
 import {
     loginUserHandler,
-    refreshAccessTokenHandler,
+    // refreshAccessTokenHandler,
     registerUserHandler,
     verifyEmailHandler,
 } from '../controllers/auth.controller';
@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.post('/register', validate(registerUserSchema), registerUserHandler);
 router.get('/login', validate(loginUserSchema), loginUserHandler);
-router.get('/refresh', refreshAccessTokenHandler)
+// router.get('/refresh', refreshAccessTokenHandler)
 // router.get(
 //     '/verifyemail/:verificationCode',
 //     validate(verifyEmailSchema),

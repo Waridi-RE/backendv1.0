@@ -29,19 +29,18 @@ router.post('/upload-profile', upload.single('profile-file'), async(req, res, ne
    
 })
 
-router.post('/upload-multiple', upload.array('profile-files', 12),  async(req, res, next) => {
-    //req.files is array of 'profile-files' files
-    //req.body will contain the text fields, if there were any
+// router.post('/upload-multiple', upload.array('profile-files', 12),  async(req, res, next) => {
+//     //req.files is array of 'profile-files' files
+//     //req.body will contain the text fields, if there were any
 
-    var imageUrlList = []
-    for(var i=0; i < req.files!.length; i++){
-      var locaFilePath = req.files[i].path
-      var result = await uploadImage(locaFilePath);
-      imageUrlList.push(result)
-    }
+//     var imageUrlList = []
+//     for(var i=0; i < req.files!.length; i++){
+//       var locaFilePath = req.files[i].path
+//       var result = await uploadImage(locaFilePath);
+//       imageUrlList.push(result)
+//     }
 
-    var response = imgResponse(imgResponse)
-    return res.send(response)
-})
+//     var response = imgResponse(imgResponse)
+//     return res.send(response)
+// })
 
-router.post('/upload')

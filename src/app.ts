@@ -5,6 +5,7 @@ import config from 'config';
 import { PrismaClient } from '@prisma/client';
 import validateEnv from './utils/validateEnv';
 import authRouter from './routes/auth.routes';
+import landlordRouter from './routes/landlord.routes';
 import AppError from './utils/appError';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
@@ -34,10 +35,11 @@ async function bootstrap() {
     );
 
     //Logger
-    if(process.env.NODE_ENV === 'development') app.use(morgan('dev'));
+    if(process.env.NODE_ENV === 'production') app.use(morgan('dev'));
 
     //Routes
-    app.use('/api/auth', authRouter);
+  app.use('/api/auth', authRouter);
+  app.use('/api/landlord', landlordRouter);
 
       // Testing
   app.get('/api/healthchecker', (_, res: Response) => {
@@ -49,7 +51,7 @@ async function bootstrap() {
 
   const port = config.get<number>('port');
 
-app.listen(port, () => {
+app.listen(port || 8081, () => {
     console.log(`Server on port: ${port}`);
   });
 }
