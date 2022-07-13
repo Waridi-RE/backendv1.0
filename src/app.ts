@@ -38,6 +38,9 @@ async function bootstrap() {
     //Logger
     if(process.env.NODE_ENV === 'production') app.use(morgan('dev'));
 
+app.use(express.static(__dirname + '/public'));
+app.use('/uploads', express.static('uploads'))
+
     //Routes
   app.use('/api/auth', authRouter);
   app.use('/api/landlord', landlordRouter);

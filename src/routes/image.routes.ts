@@ -2,13 +2,20 @@ import express from 'express';
 import multer from 'multer';
 import uploadImage from '../utils/uploadImage';
 import imgResponse from '../utils/imgResponse';
+import cloudinary from 'cloudinary';
+
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+})
 
 const router = express.Router();
 
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb){
-        cb(null, '../../uploads')
+        cb(null, '/home/james/Documents/waridi/backend/uploads')
     }, 
 
     filename: function(req, file, cb){
