@@ -84,6 +84,11 @@ export const registerUserHandler = async(
     //       });
 
     //   }
+    return res.status(200).json({
+        data: {
+            user
+        }
+    })
 
   } catch (err: any) {
       if(err instanceof Prisma.PrismaClientKnownRequestError){
