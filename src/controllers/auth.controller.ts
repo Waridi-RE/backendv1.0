@@ -136,10 +136,10 @@ export const loginUserHandler = async (
     //    const {access_token, refresh_token} = await signTokens(user);
     //    res.cookie('access_token', access_token, accessTokenCookieOptions);
     //    res.cookie('refresh_token', refresh_token, refreshTokenCookieOptions);
-       res.cookie('logged_in', true, {
+    //    res.cookie('logged_in', true, {
         //    ...accessTokenCookieOptions,
-           httpOnly: false,
-       });
+    //        httpOnly: false,
+    //    });
        res.status(200).json({
            status: 'success',
         //    access_token
