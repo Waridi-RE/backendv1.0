@@ -31,8 +31,6 @@ model Landlord{
   first_name String @db.VarChar(255)
   other_names String @db.VarChar(255)
   house_name String @db.VarChar(255)
-  nationality String @db.VarChar(255)
-  national_id Int
   location String @db.VarChar(255)
   description String @db.VarChar(255)
   createdAt DateTime @default(now())

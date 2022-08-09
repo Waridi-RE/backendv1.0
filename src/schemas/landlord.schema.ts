@@ -8,17 +8,8 @@ export const LandLordInput = object({
       other_names: string({
         required_error: 'Please Enter Your Middle Name'
       }),
-     id: number({
-       required_error: 'Please Enter Your Id'
-     }),
      location: string({
         required_error: 'Please Enter Your Location'
-      }),
-      nationality: string({
-        required_error: 'Please Enter Nationality'
-      }),
-      national_id: number({
-        required_error: 'Please Enter National ID'
       }),
       house_name: string({
         required_error: 'Please Enter House Name'
