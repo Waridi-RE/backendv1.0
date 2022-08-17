@@ -6,15 +6,16 @@ import { PrismaClient } from '@prisma/client';
 import validateEnv from './utils/validateEnv';
 import authRouter from './routes/auth.routes';
 import landlordRouter from './routes/landlord.routes';
-import imageRouter from './routes/image.routes';
 import AppError from './utils/appError';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-
+import imageRouter from '../src/routes/image.routes';
 validateEnv();
 
 const prisma = new PrismaClient();
 const app = express();
+
+
 
 async function bootstrap() {
     //TEMPLATE ENGINE
