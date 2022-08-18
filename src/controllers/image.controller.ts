@@ -3,14 +3,13 @@
 import { Request, Response } from "express";
 import { NextFunction } from "express";
 
-const SingleFile = require('../schemas/image.schema');
-
+import imageSchema from "../schemas/image.schema";
 export const singleFileUpload = async (
     req: Request,
     res: Response,
     next: NextFunction) => {
     try {
-        const file = new SingleFile({
+        const file = new imageSchema({
           fileName: req.file?.originalname,
           filePath: req.file?.path,
           fileType: req.file?.mimetype,
@@ -26,7 +25,7 @@ export const singleFileUpload = async (
 
 export const getAllFiles = async (req: Request, res: Response) => {
    try {
-    const files = await SingleFile.find();
+    const files = await imageSchema.find();
     return res.status(200).send(files);
 
    } catch (error: any) {

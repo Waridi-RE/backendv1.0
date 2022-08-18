@@ -2,6 +2,7 @@ require('dotenv').config();
 import express, {NextFunction, Request, Response} from 'express';
 import cors from 'cors';
 import config from 'config';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import validateEnv from './utils/validateEnv';
 import authRouter from './routes/auth.routes';
@@ -10,6 +11,9 @@ import AppError from './utils/appError';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import imageRouter from '../src/routes/image.routes';
+require('../config/connectMongo');
+
+
 validateEnv();
 
 const prisma = new PrismaClient();
@@ -39,8 +43,9 @@ async function bootstrap() {
     //Logger
     if(process.env.NODE_ENV === 'production') app.use(morgan('dev'));
 
-app.use(express.static(__dirname + '/public'));
-app.use('/uploads', express.static('uploads'))
+app.use(express.json())
+app.use('/assets', express.static('assets'));  
+app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 
     //Routes
   app.use('/api/auth', authRouter);
