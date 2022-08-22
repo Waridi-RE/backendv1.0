@@ -30,8 +30,6 @@ export const findUniqueLandlord = async (
 ) => {
         return(
             await prisma.user.findUnique({
-
-            
                 where,
                 select
 })
