@@ -38,14 +38,11 @@ export const getLandlordHandler = async (
     req: Request,
     res: Response,
     next: NextFunction,
+  
     ) => {
         try {
             const landlord = await getLandlord({});
-            return res.status(200).json({
-                data: {
-                    landlord
-                }
-            })
+            return res.status(200).json(landlord)
         } catch (err: any) {
             next(err);
         }
