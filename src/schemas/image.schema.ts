@@ -1,23 +1,15 @@
 import mongoose from "mongoose";
 
 const ImageSchema = new mongoose.Schema({
-    fileName: {
+    imageURL: {
        type: 'String',
        required: true
     },
-    filePath: {
-        type: 'String',
-        required: true
-    },
-    fileType: {
-        type: 'String',
-        required: true
-    },
-    fileSize: {
+    public_id: {
         type: 'String',
         required: true
     }
 }, {timestamps: true});
 
-export default mongoose.model('imageSchema', ImageSchema);
+export default mongoose.model('Image', ImageSchema);
 

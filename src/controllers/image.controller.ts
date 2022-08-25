@@ -2,22 +2,30 @@
 
 import { Request, Response } from "express";
 import { NextFunction } from "express";
+import cloudinary from 'cloudinary';
+import Image from "../schemas/image.schema";
+import fs from "fs-extra";
 
-import imageSchema from "../schemas/image.schema";
+
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  
 export const singleFileUpload = async (
     req: Request,
     res: Response,
     next: NextFunction) => {
     try {
-        const file = new imageSchema({
-          fileName: req.file?.originalname,
-          filePath: req.file?.path,
-          fileType: req.file?.mimetype,
-          fileSize: fileSizeFormatter(req.file?.size, 2)
-        })
-        await file.save();
-        console.log("File Uploaded Successfully");
-        res.status(201).send("File Uploaded Successfully");
+       const result = await cloudinary.v2.uploader.upload(req.file?.path!);
+       const newImage = new Image({
+        imageURL: result.url,
+        public_id: result.public_id
+       });
+       const savedImage = await newImage.save();
+        res.status(201).json(savedImage);
+        await fs.unlink(req.file?.path!)
     } catch (error: any) {
         res.status(400).send(error.message)
     }
@@ -25,9 +33,9 @@ export const singleFileUpload = async (
 
 export const getAllFiles = async (req: Request, res: Response) => {
    try {
-    const files = await imageSchema.find();
-    return res.status(200).send(files);
-
+    const files = await Image.find();
+    return res.status(200).json({files});
+  
    } catch (error: any) {
       res.status(400).send(error.message)
    } 
