@@ -2,17 +2,9 @@
 
 import { Request, Response } from "express";
 import { NextFunction } from "express";
-import cloudinary from 'cloudinary';
 import Image from "../schemas/image.schema";
-import fs from "fs-extra";
+import cloudinary from "../utils/cloudinary";
 
-
-cloudinary.v2.config({
-    cloud_name: process.env.CLOUDINARY_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-  
 export const singleFileUpload = async (
     req: Request,
     res: Response,
@@ -25,7 +17,6 @@ export const singleFileUpload = async (
        });
        const savedImage = await newImage.save();
         res.status(201).json(savedImage);
-        await fs.unlink(req.file?.path!)
     } catch (error: any) {
         res.status(400).send(error.message)
     }
@@ -34,7 +25,7 @@ export const singleFileUpload = async (
 export const getAllFiles = async (req: Request, res: Response) => {
    try {
     const files = await Image.find();
-    return res.status(200).json({files});
+    return res.status(200).json(files);
   
    } catch (error: any) {
       res.status(400).send(error.message)

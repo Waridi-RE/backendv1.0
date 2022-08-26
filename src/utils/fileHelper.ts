@@ -1,23 +1,19 @@
 'use strict'
 import multer from "multer";
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-         cb(null, '/home/james/Documents/waridi/backend/uploads')
-    },
-
-    filename: (req, file, cb) => {
-        cb(null, new Date().toISOString().replace(/:/g, '-') + file.originalname);
+import path from 'path';
+ 
+export default multer({
+    storage: multer.diskStorage({}),
+    fileFilter: (req, file, cb:any) => {
+        let ext = path.extname(file.originalname);
+        if (ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") {
+            cb(new Error("File type is not supported"), false);
+            return;
+          }
+          cb(null, true);
     }
+      
 })
 
-const filefilter = (req: any, file: any, cb: any) => {
-    if(file.mimetype === 'image/png' || file.mimetype === 'image/jpg'
-     || file.mimetype === 'image/jpeg'){
-        cb(null, true);
-     } else {
-        cb(null, false);
-     }
-}
 
-export const upload = multer({storage: storage, fileFilter:filefilter});
+
