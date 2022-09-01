@@ -4,9 +4,7 @@ export const validate =
 (schema: AnyZodObject) => 
 (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse({
-        params: req.params,
-        query: req.query,
+      schema.default({
         body: req.body,
       });
 

@@ -1,11 +1,12 @@
 import { PrismaClient, Prisma, Landlord } from "@prisma/client";
 import config from "config";
 import redisClient from "../utils/connectRedis";
-
+// import cloudinary from "../utils/cloudinary";
 const prisma = new PrismaClient();
 
 
 export const createLandlord = async (input: Prisma.LandlordCreateInput) => {
+
    return(
        await prisma.landlord.create({
            data: input

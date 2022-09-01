@@ -5,20 +5,25 @@ import {
     getLandlord
 } from "../services/landlord.service";
 
+import cloudinary from "../utils/cloudinary";
 import {Prisma} from "@prisma/client";
 
 export const postLandlordHandler = async (
-    req: Request<{}, {}, LandLordInput>,
+    req: Request<{}, {}>,
     res: Response,
     next: NextFunction
 ) => {
     try {
+        
+       const result = await cloudinary.v2.uploader.upload(req.file?.path!);
         const landlord = await createLandlord({
             first_name: req.body.first_name,
             other_names: req.body.other_names,
             house_name: req.body.house_name,
             description: req.body.description,
             location: req.body.location,
+            // imageURL: result.url,
+            // public_id: result.public_id
         })
        return res.status(200).json({
           data: {

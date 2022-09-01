@@ -12,6 +12,11 @@ export const singleFileUpload = async (
     try {
        const result = await cloudinary.v2.uploader.upload(req.file?.path!);
        const newImage = new Image({
+        first_name: req.body.first_name,
+        other_names: req.body.other_names,
+        house_name: req.body.house_name,
+        description: req.body.description,
+        location: req.body.location,
         imageURL: result.url,
         public_id: result.public_id
        });

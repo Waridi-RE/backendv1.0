@@ -2,6 +2,7 @@ require('dotenv').config();
 import express, {NextFunction, Request, Response} from 'express';
 import cors from 'cors';
 import config from 'config';
+import bodyParser from 'body-parser';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import validateEnv from './utils/validateEnv';
@@ -27,7 +28,9 @@ async function bootstrap() {
     app.set('views', `${__dirname}/views`);
 
     //MIDDLEWARE
-    app.use(express.json({limit: '10kb'}));
+    // app.use(express.json({limit: '10kb'}));
+
+   app.use(bodyParser.json())
 
     //Cookie Parser
     app.use(cookieParser());
@@ -43,7 +46,7 @@ async function bootstrap() {
     //Logger
     if(process.env.NODE_ENV === 'production') app.use(morgan('dev'));
 
-app.use(express.json())
+// app.use(express.json())
 app.use('/assets', express.static('assets'));  
 app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 
@@ -62,7 +65,7 @@ app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 
   const port = config.get<number>('port');
 
-app.listen(port || 8082, '192.168.100.254', () => {
+app.listen(port || 8082, '192.168.100.16', () => {
     console.log(`Server on port: ${port}`);
   });
 }
