@@ -1,11 +1,12 @@
 import { PrismaClient, Prisma, Landlord } from "@prisma/client";
 import config from "config";
 import redisClient from "../utils/connectRedis";
-
+// import cloudinary from "../utils/cloudinary";
 const prisma = new PrismaClient();
 
 
 export const createLandlord = async (input: Prisma.LandlordCreateInput) => {
+
    return(
        await prisma.landlord.create({
            data: input
@@ -16,11 +17,11 @@ export const getLandlord = async(
     where: Partial<Prisma.LandlordCreateInput>,
     select?: Prisma.LandlordSelect) => {
     return(
-        await prisma.landlord.findFirst({
+        await prisma.landlord.findMany({
             where,
             select
         })
-    ) as Landlord
+    ) as unknown as Landlord;
 }
 
 
@@ -30,8 +31,6 @@ export const findUniqueLandlord = async (
 ) => {
         return(
             await prisma.user.findUnique({
-
-            
                 where,
                 select
 })

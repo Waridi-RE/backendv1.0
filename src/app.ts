@@ -2,19 +2,25 @@ require('dotenv').config();
 import express, {NextFunction, Request, Response} from 'express';
 import cors from 'cors';
 import config from 'config';
+import bodyParser from 'body-parser';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import validateEnv from './utils/validateEnv';
 import authRouter from './routes/auth.routes';
 import landlordRouter from './routes/landlord.routes';
-import imageRouter from './routes/image.routes';
 import AppError from './utils/appError';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import imageRouter from '../src/routes/image.routes';
+require('../config/connectMongo');
+
 
 validateEnv();
 
 const prisma = new PrismaClient();
 const app = express();
+
+
 
 async function bootstrap() {
     //TEMPLATE ENGINE
@@ -22,7 +28,9 @@ async function bootstrap() {
     app.set('views', `${__dirname}/views`);
 
     //MIDDLEWARE
-    app.use(express.json({limit: '10kb'}));
+    // app.use(express.json({limit: '10kb'}));
+
+   app.use(bodyParser.json())
 
     //Cookie Parser
     app.use(cookieParser());
@@ -38,8 +46,9 @@ async function bootstrap() {
     //Logger
     if(process.env.NODE_ENV === 'production') app.use(morgan('dev'));
 
-app.use(express.static(__dirname + '/public'));
-app.use('/uploads', express.static('uploads'))
+// app.use(express.json())
+app.use('/assets', express.static('assets'));  
+app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 
     //Routes
   app.use('/api/auth', authRouter);
@@ -56,7 +65,11 @@ app.use('/uploads', express.static('uploads'))
 
   const port = config.get<number>('port');
 
+<<<<<<< HEAD
 app.listen(port || 8081, '38.242.239.1', () => {
+=======
+app.listen(port || 8082, '192.168.100.16', () => {
+>>>>>>> 4975dafe85bf9b6078184ee81b0eb25bc7895360
     console.log(`Server on port: ${port}`);
   });
 }

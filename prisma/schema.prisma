@@ -33,6 +33,8 @@ model Landlord{
   house_name String @db.VarChar(255)
   location String @db.VarChar(255)
   description String @db.VarChar(255)
+  imageURL String @db.VarChar(255) @default('')
+  public_id String @db.VarChar(255)
   createdAt DateTime @default(now())
   updateAt DateTime @updatedAt
 }

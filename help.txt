@@ -15,4 +15,3 @@ npx prisma db push
 github.com/wpcodevo
 
 
-

@@ -1,26 +1,28 @@
-import { TypeOf, z, object, string, number } from "zod";
+import Joi from "joi";
 
-export const LandLordInput = object({
-  body: object({
-    first_name: string({
-        required_error: 'Please Enter Your First Name'
-      }),
-      other_names: string({
-        required_error: 'Please Enter Your Middle Name'
-      }),
-     location: string({
-        required_error: 'Please Enter Your Location'
-      }),
-      house_name: string({
-        required_error: 'Please Enter House Name'
-      }),
-      description: string({
-        required_error: 'Describe Your House'
-      })
-      
+export interface LandLordInput {
+  first_name: string,
+  other_names: string,
+  location: string,
+  house_name: string,
+  description: string,
+  imageURL: string,
+  public_id: string
+}; 
+
+// import { TypeOf, z, object, string, Schema, number } from "zod";
+// import { zfd } from "zod-form-data";
+// export const schema = zfd.formData({
+//   first_name: zfd.text(),
+//   other_names: zfd.text(),
+//   location: zfd.text(),
+//   house_name: zfd.text(),
+//   description: zfd.text()
+// })
 
 
-})
-})
-
-export type LandLordInput = TypeOf<typeof LandLordInput>['body'];
+// export const LandLordInput = async({request}: any) => {
+//   const {first_name, other_names, location, house_name, description} = schema.parse(
+//     await request.formData()
+//   );
+// };
