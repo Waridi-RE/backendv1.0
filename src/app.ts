@@ -56,7 +56,7 @@ app.use('/uploads', express.static('uploads'))
 
   const port = config.get<number>('port');
 
-app.listen(port || 8082, '192.168.100.254', () => {
+app.listen(port || 8081, '38.242.239.1', () => {
     console.log(`Server on port: ${port}`);
   });
 }
