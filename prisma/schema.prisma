@@ -11,7 +11,7 @@ datasource db {
 model User{
     @@map(name: "users")
 
-    id Int @id @default(autoincrement())
+    id String @default(uuid())
     name String @db.VarChar(255)
     email String @unique
     photo String? @default("default.png")
@@ -27,14 +27,12 @@ model User{
 
 model Landlord{
   @@map(name: "landlord")
-  id Int @id @default(autoincrement())
+  id String @unique @default(uuid())
   first_name String @db.VarChar(255)
   other_names String @db.VarChar(255)
   house_name String @db.VarChar(255)
   location String @db.VarChar(255)
   description String @db.VarChar(255)
-  imageURL String @db.VarChar(255) @default('')
-  public_id String @db.VarChar(255)
   createdAt DateTime @default(now())
   updateAt DateTime @updatedAt
 }

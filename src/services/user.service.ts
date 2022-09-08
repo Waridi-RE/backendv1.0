@@ -47,20 +47,20 @@ export const createUser = async(input:  Prisma.UserCreateInput) => {
        )) as User;
  }
 
-//  export const signTokens = async(user: Prisma.UserCreateInput) => {
-//       //1. Create Session
-//       redisClient.set(`${user.id}`, JSON.stringify(user), {
-//           EX: config.get<number>('redisCacheExpiresIn') * 60
-//       });
+ export const signTokens = async(user: Prisma.UserCreateInput) => {
+      //1. Create Session
+      redisClient.set(`${user}`, JSON.stringify(user), {
+          EX: config.get<number>('redisCacheExpiresIn') * 60
+      });
 
-//       //Create Access and Refresh Tokens
-//     const access_token = signJwt({sub: user.id}, 'accessTokenPrivateKey',{
-//      expiresIn: `${config.get('accessTokenExpiresIn')}m`, });
+      //Create Access and Refresh Tokens
+    const access_token = signJwt({sub: user}, 'accessTokenPrivateKey',{
+     expiresIn: `${config.get('accessTokenExpiresIn')}m`, });
 
-//     const refresh_token = signJwt({sub: user.id}, 'refreshTokenPrivateKey', {
-//         expiresIn: `${config.get('refreshTokenExpiresIn')}m`
-//     }); 
+    const refresh_token = signJwt({sub: user}, 'refreshTokenPrivateKey', {
+        expiresIn: `${config.get('refreshTokenExpiresIn')}m`
+    }); 
 
-//     return {access_token, refresh_token};
-//  }
+    return {access_token, refresh_token};
+ }
 
