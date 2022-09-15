@@ -12,8 +12,15 @@ const MarketSchema = new  mongoose.Schema({
     location: {
         type: String,
         required: true
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    public_id: {
+        type: String,
+        required: true
     }
-
 });
 
-module.exports = mongoose.model('Market', MarketSchema);
+export default mongoose.model('Market', MarketSchema);

@@ -12,6 +12,7 @@ import AppError from './utils/appError';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import imageRouter from '../src/routes/image.routes';
+import marketRouter from '../src/routes/market.routes';
 require('../config/connectMongo');
 
 
@@ -54,6 +55,7 @@ app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
   app.use('/api/auth', authRouter);
   app.use('/api/landlord', landlordRouter);
   app.use('/api/image', imageRouter);
+  app.use('/api/market', marketRouter);
 
       // Testing
   app.get('/api/healthchecker', (_, res: Response) => {
