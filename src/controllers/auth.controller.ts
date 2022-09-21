@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import config from 'config';
 import {CookieOptions, NextFunction, Request, Response} from 'express';
+import  Jwt  from 'jsonwebtoken';
+import sendMail from '../conf/sendMail';
 import {
     createUser,
     findUniqueUser,
@@ -9,13 +11,25 @@ import {
     updateUser,
     signTokens
 } from '../services/user.service';
+import {genAccessToken, genActiveToken} from '../conf/genToken';
+import {validateEmail} from '../middleware/valid';
 import AppError from '../utils/appError';
-import { signJwt, verifyJwt } from '../utils/jwt';
-
+import { IUser, IDecodedToken } from '../utils/types';
 import { LoginUserInput, RegisterUserInput, VerifyEmailInput } from '../schemas/user.schema';
 import Email from '../utils/email';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import redisClient from '../utils/connectRedis';
+import { email } from 'envalid';
+const prisma = new PrismaClient();
+
+const tokenEnv = {
+  active: process.env.ACTIVE_TOKEN_SECRET,
+  refresh: process.env.REFRESH_TOKEN_SECRET,
+  access: process.env.ACCESS_TOKEN_SECRET, 
+};
+
+const CLIENT_URL = `${process.env.BASE_URL}`;
+
 
 const cookiesOptions: CookieOptions ={
     httpOnly: true,
@@ -46,10 +60,19 @@ const refreshTokenCookieOptions: CookieOptions = {
 export const registerUserHandler = async(
   req: Request<{}, {}, RegisterUserInput>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
+  where: Prisma.UserWhereUniqueInput
    
 ) => {
   try {
+      const exististingUser = await  prisma.user.findUnique({
+        where: {email: req.body.email},
+      });
+
+      if(exististingUser){
+        return res.status(400).json({message: "This user already exists"});
+      }
+
       const hashedPassword = await bcrypt.hash(req.body.password, 12);
       const verifyCode = crypto.randomBytes(32).toString('hex');
 
@@ -57,13 +80,30 @@ export const registerUserHandler = async(
       .createHash('sha256')
       .update(verifyCode)
       .digest('hex');
+      const {name, email, password} = req.body;
+    
+      const user: IUser = {
+          name: name,
+          email: email,
+          password: password,
+      };
 
-      const user = await createUser({
-          name: req.body.name,
-          email: req.body.email.toLowerCase(),
-          password: hashedPassword,
+      //It generates a token five minutes to activate account
+      const activeToken = genActiveToken({user});
+      const url = `${CLIENT_URL}/active/${activeToken}`;
+      if(validateEmail(email)){
+        sendMail(email, url, "Verify your email address");
+        return res.json({
+            message: "Success! Please check your email address",
+            active_token: activeToken,
+        });
+      }
+    //   const user = await createUser({
+    //       name: req.body.name,
+    //       email: req.body.email.toLowerCase(),
+    //       password: hashedPassword,
           //verificationCode,
-      });
+    //   });
 
     //   const redirectUrl = `${config.get<string>(
     //           'origin'
@@ -103,6 +143,27 @@ export const registerUserHandler = async(
   }
 };
 
+export const activeAccount = async (req: Request, res: Response) => {
+    try {
+       const {active_token} = req.body;
+       const decoded = <IDecodedToken>(
+        Jwt.verify(active_token, `${tokenEnv.active}`)
+       );
+       const { user } = decoded;
+       if(!user) return res.status(400).json({message: "Invalid Token"});
+       await prisma.user.create({
+        data: {
+            name: user.name,
+            email: user.email,
+            password: user.password,
+        },
+       });
+      res.status(200).json({ message: "Account has been activated" });
+    } catch (err: any) {
+        res.status(500).json({message: err.message});
+    }
+}
+
 export const loginUserHandler = async (
     req: Request<{}, {},  LoginUserInput>,
     res: Response,
@@ -110,10 +171,9 @@ export const loginUserHandler = async (
 ) => {
    try {
        const {email, password} = req.body;
-       const user = await findUniqueUser(
-           {email: email.toLowerCase()},
-           {id: true, email: true, /*verified:  true,*/ password: true}
-       );
+       const user = await prisma.user.findUnique({
+           where: {email: req.body.email}
+       })
        if(!user){
            return next(new AppError(400, 'Invalid email or password'));
        }

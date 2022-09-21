@@ -21,8 +21,12 @@ model User{
     verificationCode String? @db.Text @unique
     createdAt DateTime @default(now())
     updateAt DateTime @updatedAt
+    passwordResetToken String?
+    passwordResetAt DateTime?
     @@unique([email, verificationCode])
     @@index([email, verificationCode])
+    @@unique([email, verificationCode, passwordResetToken])
+    @@index([email, verificationCode, passwordResetToken])
 }
 
 model Landlord{
@@ -40,4 +44,6 @@ model Landlord{
 enum RoleEnumType {
     user
     admin
+    tenant
+    landlord
 }

@@ -13,14 +13,9 @@ export const createLandlord = async (input: Prisma.LandlordCreateInput) => {
        })) as Landlord;
 };
 
-export const getLandlord = async(
-    where: Partial<Prisma.LandlordCreateInput>,
-    select?: Prisma.LandlordSelect) => {
+export const getLandlord = async() => {
     return(
-        await prisma.landlord.findMany({
-            where,
-            select
-        })
+         await prisma.landlord.findMany()
     ) as unknown as Landlord;
 }
 

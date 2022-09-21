@@ -14,4 +14,3 @@ router.post('/createhouse',postLandlordHandler);
 router.get('/landlord', getLandlordHandler);
 
 export default router;
-

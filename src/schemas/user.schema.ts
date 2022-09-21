@@ -2,7 +2,10 @@ import {object, TypeOf, z, string} from "zod";
 
 enum RoleEnumType {
     ADMIN = 'admin',
-    USER = 'user'
+    USER = 'user',
+    LANDLORD = 'landlord',
+    TENANT = 'landlord',
+
 }
 
 
@@ -65,7 +68,15 @@ export const verifyEmailSchema = object({
       }),
   });
   
+  export const forgotPaswordSchema = object({
+    body: object({
+      email: string({
+        required_error: 'Email is required',
+      }).email('Email is Invalid'),
+    }),
+  });
 
+  
   
   export type RegisterUserInput = Omit<
   TypeOf<typeof registerUserSchema>['body'],

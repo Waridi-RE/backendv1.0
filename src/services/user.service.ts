@@ -1,4 +1,5 @@
 import {PrismaClient, Prisma, User} from "@prisma/client";
+import {Request, Response} from "express";
 import redisClient from "../utils/connectRedis";
 import config from 'config';
 import { signJwt } from "../utils/jwt";
@@ -33,15 +34,15 @@ export const createUser = async(input:  Prisma.UserCreateInput) => {
  }
 
  export const findUniqueUser = async (
+     req: Request,
      where: Prisma.UserWhereUniqueInput,
      select?: Prisma.UserSelect
 
  ) => {
        return( await prisma.user.findUnique(
-
        
            {
-               where,
+               where: {email: req.body.email},
                select
            }
        )) as User;
