@@ -67,7 +67,7 @@ app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 
   const port = config.get<number>('port');
 
-app.listen(port || 8082, '192.168.100.16', () => {
+app.listen(port || 8082, '192.168.0.37', () => {
     console.log(`Server on port: ${port}`);
   });
 }

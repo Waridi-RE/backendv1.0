@@ -4,7 +4,7 @@ enum RoleEnumType {
     ADMIN = 'admin',
     USER = 'user',
     LANDLORD = 'landlord',
-    TENANT = 'landlord',
+    TENANT = 'tenant',
 
 }
 

@@ -14,19 +14,12 @@ model User{
     id String @default(uuid())
     name String @db.VarChar(255)
     email String @unique
-    photo String? @default("default.png")
     verified Boolean? @default(false)
     password String
     role RoleEnumType? @default(user)
-    verificationCode String? @db.Text @unique
+    isVerified String @default("false")
     createdAt DateTime @default(now())
     updateAt DateTime @updatedAt
-    passwordResetToken String?
-    passwordResetAt DateTime?
-    @@unique([email, verificationCode])
-    @@index([email, verificationCode])
-    @@unique([email, verificationCode, passwordResetToken])
-    @@index([email, verificationCode, passwordResetToken])
 }
 
 model Landlord{

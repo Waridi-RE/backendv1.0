@@ -2,6 +2,7 @@ import express from 'express';
 import {
     loginUserHandler,
     // refreshAccessTokenHandler,
+    activeAccount,
     registerUserHandler,
     verifyEmailHandler,
 } from '../controllers/auth.controller';
@@ -15,6 +16,7 @@ import {
 const router = express.Router();
 
 router.post('/register', validate(registerUserSchema), registerUserHandler);
+router.post('/active', activeAccount);
 router.post('/login', validate(loginUserSchema), loginUserHandler);
 // router.get('/refresh', refreshAccessTokenHandler)
 // router.get(

@@ -28,7 +28,7 @@ const tokenEnv = {
   access: process.env.ACCESS_TOKEN_SECRET, 
 };
 
-const CLIENT_URL = `${process.env.BASE_URL}`;
+const CLIENT_URL = process.env.BASE_URL;
 
 
 const cookiesOptions: CookieOptions ={
@@ -58,10 +58,8 @@ const refreshTokenCookieOptions: CookieOptions = {
 
 
 export const registerUserHandler = async(
-  req: Request<{}, {}, RegisterUserInput>,
+  req: Request,
   res: Response,
-  next: NextFunction,
-  where: Prisma.UserWhereUniqueInput
    
 ) => {
   try {
@@ -74,6 +72,7 @@ export const registerUserHandler = async(
       }
 
       const hashedPassword = await bcrypt.hash(req.body.password, 12);
+
       const verifyCode = crypto.randomBytes(32).toString('hex');
 
       const verificationCode = crypto
@@ -90,7 +89,7 @@ export const registerUserHandler = async(
 
       //It generates a token five minutes to activate account
       const activeToken = genActiveToken({user});
-      const url = `${CLIENT_URL}/active/${activeToken}`;
+      const url = `${CLIENT_URL}/api/v1/auth/active/${activeToken}`;
       if(validateEmail(email)){
         sendMail(email, url, "Verify your email address");
         return res.json({
@@ -130,16 +129,16 @@ export const registerUserHandler = async(
         }
     })
 
-  } catch (err: any) {
-      if(err instanceof Prisma.PrismaClientKnownRequestError){
-          if(err.code === 'P2002'){
-              return res.status(409).json({
-                  status: 'fail',
-                  message: 'Email already exist, please use another email address',
-              });
-          }
-      }
-      next(err);
+  } catch (error: any) {
+    res.status(500).json(error.message);
+    //   if(err instanceof Prisma.PrismaClientKnownRequestError){
+    //       if(err.code === 'P2002'){
+    //           return res.status(409).json({
+    //               status: 'fail',
+    //               message: 'Email already exist, please use another email address',
+    //           });
+    //       }
+    //   }
   }
 };
 
@@ -265,39 +264,39 @@ export const loginUserHandler = async (
 //    }
 // };
 
-export const verifyEmailHandler = async(
-    req: Request<VerifyEmailInput>,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        const verificationCode = crypto
-        .createHash('sha256')
-        .update(req.params.verificationCode)
-        .digest('hex');
+// export const verifyEmailHandler = async(
+//     req: Request<VerifyEmailInput>,
+//     res: Response,
+//     next: NextFunction
+// ) => {
+//     try {
+//         const verificationCode = crypto
+//         .createHash('sha256')
+//         .update(req.params.verificationCode)
+//         .digest('hex');
 
-        const user = await updateUser(
-            {verificationCode},
-            {verified: true, verificationCode: null},
-            {email: true}
-        );
+//         const user = await updateUser(
+//             {verificationCode},
+//             {verified: true, verificationCode: null},
+//             {email: true}
+//         );
 
-        if(!user){
-            return next(new AppError(401, 'Could not verify email'));
-        }
+//         if(!user){
+//             return next(new AppError(401, 'Could not verify email'));
+//         }
 
-        res.status(200).json({
-            status: 'success',
-            message: 'Email verified successfully',
-          });
+//         res.status(200).json({
+//             status: 'success',
+//             message: 'Email verified successfully',
+//           });
 
-    } catch (err: any) {
-        if (err.code === 'P2025') {
-            return res.status(403).json({
-              status: 'fail',
-              message: `Verification code is invalid or user doesn't exist`,
-            });
-          }
-          next(err);
-        }   
-    }
+//     } catch (err: any) {
+//         if (err.code === 'P2025') {
+//             return res.status(403).json({
+//               status: 'fail',
+//               message: `Verification code is invalid or user doesn't exist`,
+//             });
+//           }
+//           next(err);
+//         }   
+//     }
