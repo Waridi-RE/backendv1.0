@@ -19,3 +19,5 @@ function Permission(roles: string[]){
     }
 
 }
+
+export default Permission;
