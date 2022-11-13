@@ -14,7 +14,7 @@ class AuthController {
         const validator = Joi.object<IUser>({
             username: Joi.string().trim().max(500),
             password: Joi.string().trim().max(500),
-            email: Joi.string().trim().max(500).email,
+            email: Joi.string().trim().max(500).email(),
             role: Joi.string().trim().max(50).valid('admin', 'landlord', 'tenant', 'user')
         });
 
