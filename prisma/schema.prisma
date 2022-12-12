@@ -9,34 +9,64 @@ datasource db {
 }
 
 model User{
-    @@map(name: "users")
+  id Int @id @default(autoincrement);
+  email String @unique
+  firstName String?
+  lastName String?
+  phone Int?
+  role Role @default(USER)
+  
+  //Relation Fields
 
-    id String @default(uuid())
-    name String @db.VarChar(255)
-    email String @unique
-    verified Boolean? @default(false)
-    password String
-    role RoleEnumType? @default(user)
-    isVerified String @default("false")
-    createdAt DateTime @default(now())
-    updateAt DateTime @updatedAt
+   tokens Token[]
+
 }
 
-model Landlord{
-  @@map(name: "landlord")
-  id String @unique @default(uuid())
-  first_name String @db.VarChar(255)
-  other_names String @db.VarChar(255)
-  house_name String @db.VarChar(255)
-  location String @db.VarChar(255)
-  description String @db.VarChar(255)
+model ExtendedProfile {
+  id Int @id @default(autoincrement())
+  userId Int? @unique
+  bio String?
+  User User? @relation(fields: [userId], references: [id])
+}
+
+
+model Apartment {
+  id Int @id @default(autoincrement);
   createdAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  name String?
+  location String?
+  
+  role UserRole 
+  
+  // Relation Fields
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+
+  @@id(userId)
+  @@index([userId, role])
 }
 
-enum RoleEnumType {
-    user
-    admin
-    tenant
-    landlord
+model Token {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updateAt
+  type TokenType
+  emailToken String? @unique 
+  valid Boolean @default(true)
+  expiration DateTime
+
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+}
+
+enum UserRole {
+    LANDLORD,
+    TENANT,
+    USER,
+    ADMIN,
+}
+
+enum TokenType {
+  EMAIL
+  API
 }

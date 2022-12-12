@@ -1,12 +1,15 @@
-import { LandLordInput } from "../schemas/landlord.schema";
 import { Response, NextFunction, Request } from "express";
+import { PrismaClient, Landlord, Prisma } from "@prisma/client";
+
+
 import {
     createLandlord,
     getLandlord
 } from "../services/landlord.service";
 
 import cloudinary from "../utils/cloudinary";
-import {Prisma} from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export const postLandlordHandler = async (
     req: Request<{}, {}>,
@@ -16,7 +19,7 @@ export const postLandlordHandler = async (
     try {
         
        const result = await cloudinary.v2.uploader.upload(req.file?.path!);
-        const landlord = await createLandlord({
+        const landlord = await prisma.landlord.create({
             first_name: req.body.first_name,
             other_names: req.body.other_names,
             house_name: req.body.house_name,

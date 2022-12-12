@@ -1,88 +1,32 @@
-import {object, TypeOf, z, string} from "zod";
+import { object, string, TypeOf } from 'zod';
 
-enum RoleEnumType {
-    ADMIN = 'admin',
-    USER = 'user',
-    LANDLORD = 'landlord',
-    TENANT = 'tenant',
-
-}
-
-
-export const registerUserSchema = object({
-   body: object({
-       name: string({
-           required_error: 'Username Required'
-       }),
-       email: string({
-           required_error: 'Email Is Required'
-        }).email('Invalid Email Address'),
-       password: string({
-           required_error: 'Password is Required'
-       })    
-       .min(8, 'Password must be more than 8 characters')
-       .max(32, 'Password must be less than 32 characters'),
-     passwordConfirm: string({
-       required_error: 'Please confirm your password',
-     }),
-     role: z.optional(z.nativeEnum(RoleEnumType)),
-   }).refine((data) => data.password === data.passwordConfirm, {
-     path: ['passwordConfirm'],
-     message: 'Passwords do not match',
-   }),  
-   });
-
-
+export const createUserSchema = object({
+  body: object({
+    name: string({ required_error: 'Name is required' }),
+    email: string({ required_error: 'Email is required' }).email(
+      'Invalid email'
+    ),
+    password: string({ required_error: 'Password is required' })
+      .min(8, 'Password must be more than 8 characters')
+      .max(32, 'Password must be less than 32 characters'),
+    passwordConfirm: string({ required_error: 'Please confirm your password' }),
+  }).refine((data) => data.password === data.passwordConfirm, {
+    path: ['passwordConfirm'],
+    message: 'Passwords do not match',
+  }),
+});
 
 export const loginUserSchema = object({
-    body: object({
-      email: string({
-        required_error: 'Email address is required',
-      }).email('Invalid email address'),
-      password: string({
-        required_error: 'Password is required',
-      }).min(8, 'Invalid email or password'),
-    }),
-  });
+  body: object({
+    email: string({ required_error: 'Email is required' }).email(
+      'Invalid email or password'
+    ),
+    password: string({ required_error: 'Password is required' }).min(
+      8,
+      'Invalid email or password'
+    ),
+  }),
+});
 
-export const verifyEmailSchema = object({
-  params: object({
-    verificationCode: string(),
-  })
-})  
-  
-  export const updateUserSchema = object({
-    body: object({
-      name: string({}),
-      email: string({}).email('Invalid email address'),
-      password: string({})
-        .min(8, 'Password must be more than 8 characters')
-        .max(32, 'Password must be less than 32 characters'),
-      passwordConfirm: string({}),
-      role: z.optional(z.nativeEnum(RoleEnumType)),
-    })
-      .partial()
-      .refine((data) => data.password === data.passwordConfirm, {
-        path: ['passwordConfirm'],
-        message: 'Passwords do not match',
-      }),
-  });
-  
-  export const forgotPaswordSchema = object({
-    body: object({
-      email: string({
-        required_error: 'Email is required',
-      }).email('Email is Invalid'),
-    }),
-  });
-
-  
-  
-  export type RegisterUserInput = Omit<
-  TypeOf<typeof registerUserSchema>['body'],
-  'passwordConfirm'
->;
-
+export type CreateUserInput = TypeOf<typeof createUserSchema>['body'];
 export type LoginUserInput = TypeOf<typeof loginUserSchema>['body'];
-export type UpdateUserInput = TypeOf<typeof updateUserSchema>['body'];
-export type VerifyEmailInput = TypeOf<typeof verifyEmailSchema>['params'];

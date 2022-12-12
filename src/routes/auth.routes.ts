@@ -1,28 +1,29 @@
 import express from 'express';
 import {
-    loginUserHandler,
-    // refreshAccessTokenHandler,
-    activeAccount,
-    registerUserHandler,
-    verifyEmailHandler,
+  loginHandler,
+  logoutHandler,
+  refreshAccessTokenHandler,
+  registerHandler,
 } from '../controllers/auth.controller';
+import { deserializeUser } from '../middleware/deserializeUser';
+import { requireUser } from '../middleware/requireUser';
 import { validate } from '../middleware/validate';
-import { 
-    loginUserSchema,
-     registerUserSchema,
-     
-    } from '../schemas/user.schema';
+import { createUserSchema, loginUserSchema } from '../schemas/user.schema';
 
 const router = express.Router();
 
-router.post('/register', validate(registerUserSchema), registerUserHandler);
-router.post('/active', activeAccount);
-router.post('/login', validate(loginUserSchema), loginUserHandler);
-// router.get('/refresh', refreshAccessTokenHandler)
-// router.get(
-//     '/verifyemail/:verificationCode',
-//     validate(verifyEmailSchema),
-//     verifyEmailHandler
-// );
+// Register user route
+router.post('/register', validate(createUserSchema), registerHandler);
+
+// Login user route
+router.post('/login', validate(loginUserSchema), loginHandler);
+
+// Refresh access toke route
+router.get('/refresh', refreshAccessTokenHandler);
+
+router.use(deserializeUser, requireUser);
+
+// Logout User
+router.get('/logout', logoutHandler);
 
 export default router;

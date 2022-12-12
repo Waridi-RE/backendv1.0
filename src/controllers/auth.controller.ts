@@ -1,302 +1,183 @@
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
 import config from 'config';
-import {CookieOptions, NextFunction, Request, Response} from 'express';
-import  Jwt  from 'jsonwebtoken';
-import sendMail from '../conf/sendMail';
+import { CookieOptions, NextFunction, Request, Response } from 'express';
+import { CreateUserInput, LoginUserInput } from '../schemas/user.schema';
 import {
-    createUser,
-    findUniqueUser,
-    findUser,
-    updateUser,
-    signTokens
+  createUser,
+  findUser,
+  findUserById,
+  signToken,
 } from '../services/user.service';
-import {genAccessToken, genActiveToken} from '../conf/genToken';
-import {validateEmail} from '../middleware/valid';
 import AppError from '../utils/appError';
-import { IUser, IDecodedToken } from '../utils/types';
-import { LoginUserInput, RegisterUserInput, VerifyEmailInput } from '../schemas/user.schema';
-import Email from '../utils/email';
-import { Prisma, PrismaClient } from '@prisma/client';
 import redisClient from '../utils/connectRedis';
-import { email } from 'envalid';
-const prisma = new PrismaClient();
+import { signJwt, verifyJwt } from '../utils/jwt';
 
-const tokenEnv = {
-  active: process.env.ACTIVE_TOKEN_SECRET,
-  refresh: process.env.REFRESH_TOKEN_SECRET,
-  access: process.env.ACCESS_TOKEN_SECRET, 
-};
+// Exclude this fields from the response
+export const excludedFields = ['password'];
 
-const CLIENT_URL = process.env.BASE_URL;
-
-
-const cookiesOptions: CookieOptions ={
-    httpOnly: true,
-    sameSite: 'lax'
-}
-
-if(process.env.NODE_ENV == "production") cookiesOptions.secure = true;
-
-
+// Cookie options
 const accessTokenCookieOptions: CookieOptions = {
-    ...cookiesOptions,
-    expires: new Date(
-        Date.now() + config.get<number>('accessTokenExpiresIn') * 60 * 1000
-    ),
-    maxAge: config.get<number>('accessTokenExpiresIn') * 60 * 1000
-
+  expires: new Date(
+    Date.now() + config.get<number>('accessTokenExpiresIn') * 60 * 1000
+  ),
+  maxAge: config.get<number>('accessTokenExpiresIn') * 60 * 1000,
+  httpOnly: true,
+  sameSite: 'lax',
 };
 
 const refreshTokenCookieOptions: CookieOptions = {
-    ...cookiesOptions,
-    expires: new Date( 
-        Date.now() + config.get<number> ('refreshTokenExpiresIn') * 60 * 1000,
-    ),
-    maxAge: config.get<number>('refreshTokenExpiresIn') * 60 * 1000,
+  expires: new Date(
+    Date.now() + config.get<number>('refreshTokenExpiresIn') * 60 * 1000
+  ),
+  maxAge: config.get<number>('refreshTokenExpiresIn') * 60 * 1000,
+  httpOnly: true,
+  sameSite: 'lax',
 };
 
+// Only set secure to true in production
+if (process.env.NODE_ENV === 'production')
+  accessTokenCookieOptions.secure = true;
 
-export const registerUserHandler = async(
-  req: Request,
+export const registerHandler = async (
+  req: Request<{}, {}, CreateUserInput>,
   res: Response,
-   
+  next: NextFunction
 ) => {
   try {
-      const exististingUser = await  prisma.user.findUnique({
-        where: {email: req.body.email},
+    const user = await createUser({
+      email: req.body.email,
+      name: req.body.name,
+      password: req.body.password,
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        user,
+      },
+    });
+  } catch (err: any) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        status: 'fail',
+        message: 'Email already exist',
       });
-
-      if(exististingUser){
-        return res.status(400).json({message: "This user already exists"});
-      }
-
-      const hashedPassword = await bcrypt.hash(req.body.password, 12);
-
-      const verifyCode = crypto.randomBytes(32).toString('hex');
-
-      const verificationCode = crypto
-      .createHash('sha256')
-      .update(verifyCode)
-      .digest('hex');
-      const {name, email, password} = req.body;
-    
-      const user: IUser = {
-          name: name,
-          email: email,
-          password: password,
-      };
-
-      //It generates a token five minutes to activate account
-      const activeToken = genActiveToken({user});
-      const url = `${CLIENT_URL}/api/v1/auth/active/${activeToken}`;
-      if(validateEmail(email)){
-        sendMail(email, url, "Verify your email address");
-        return res.json({
-            message: "Success! Please check your email address",
-            active_token: activeToken,
-        });
-      }
-    //   const user = await createUser({
-    //       name: req.body.name,
-    //       email: req.body.email.toLowerCase(),
-    //       password: hashedPassword,
-          //verificationCode,
-    //   });
-
-    //   const redirectUrl = `${config.get<string>(
-    //           'origin'
-    //   )}/verifyemail/${verifyCode}`;
-    //   try{
-    //       await new Email(user, redirectUrl).sendVerificationCode();
-    //       await updateUser({id: user.id}, {verificationCode});
-
-    //       res.status(201).json({
-    //           status: 'success',
-    //           message: 'Email with a verification code has been sent to your email',
-    //       });
-    //   } catch(error){
-    //       await updateUser({id: user.id}, {verificationCode: null});
-    //       return res.status(500).json({
-    //           status: 'error',
-    //           message: 'There was an error sending email, please try again',
-    //       });
-
-    //   }
-    return res.status(200).json({
-        data: {
-            user
-        }
-    })
-
-  } catch (error: any) {
-    res.status(500).json(error.message);
-    //   if(err instanceof Prisma.PrismaClientKnownRequestError){
-    //       if(err.code === 'P2002'){
-    //           return res.status(409).json({
-    //               status: 'fail',
-    //               message: 'Email already exist, please use another email address',
-    //           });
-    //       }
-    //   }
+    }
+    next(err);
   }
 };
 
-export const activeAccount = async (req: Request, res: Response) => {
-    try {
-       const {active_token} = req.body;
-       const decoded = <IDecodedToken>(
-        Jwt.verify(active_token, `${tokenEnv.active}`)
-       );
-       const { user } = decoded;
-       if(!user) return res.status(400).json({message: "Invalid Token"});
-       await prisma.user.create({
-        data: {
-            name: user.name,
-            email: user.email,
-            password: user.password,
-        },
-       });
-      res.status(200).json({ message: "Account has been activated" });
-    } catch (err: any) {
-        res.status(500).json({message: err.message});
-    }
-}
-
-export const loginUserHandler = async (
-    req: Request<{}, {},  LoginUserInput>,
-    res: Response,
-    next: NextFunction
+export const loginHandler = async (
+  req: Request<{}, {}, LoginUserInput>,
+  res: Response,
+  next: NextFunction
 ) => {
-   try {
-       const {email, password} = req.body;
-       const user = await prisma.user.findUnique({
-           where: {email: req.body.email}
-       })
-       if(!user){
-           return next(new AppError(400, 'Invalid email or password'));
-       }
+  try {
+    // Get the user from the collection
+    const user = await findUser({ email: req.body.email });
 
-       //Check if user is verified
-    //    if(!user.verified){
-    //         return next(
-    //             new AppError(
-    //                  401,
-    //                  'You are not verified, Please verify your email'
-    //             )
-    //         );
-    //    }
+    // Check if user exist and password is correct
+    if (
+      !user ||
+      !(await user.comparePasswords(user.password, req.body.password))
+    ) {
+      return next(new AppError('Invalid email or password', 401));
+    }
 
-       if(!user || !(await bcrypt.compare(password, user.password))){
-           return next(new AppError(400, 'Invalid email or password'));
-       }
+    // Create the Access and refresh Tokens
+    const { access_token, refresh_token } = await signToken(user);
 
-       //Sign Tokens
-       const {access_token} = await signTokens(user);
-       res.cookie('access_token', access_token, accessTokenCookieOptions);
-    //    res.cookie('refresh_token', refresh_token, refreshTokenCookieOptions);
-       res.cookie('logged_in', true, {
-           ...accessTokenCookieOptions,
-           httpOnly: false,
-       });
-       res.status(200).json({
-           status: 'success',
-           access_token
-       });
-       
-   } catch (err: any) {
-       next(err);
-   }
-}; 
+    // Send Access Token in Cookie
+    res.cookie('access_token', access_token, accessTokenCookieOptions);
+    res.cookie('refresh_token', refresh_token, refreshTokenCookieOptions);
+    res.cookie('logged_in', true, {
+      ...accessTokenCookieOptions,
+      httpOnly: false,
+    });
 
-// export const refreshAccessTokenHandler = async(
-//    req: Request,
-//    res: Response,
-//    next: NextFunction
+    // Send Access Token
+    res.status(200).json({
+      status: 'success',
+      access_token,
+    });
+  } catch (err: any) {
+    next(err);
+  }
+};
 
-// ) => {
-//    try {
-//        const refresh_token = req.cookies.refresh_token;
-//        const message = 'Could not refresh access token';
-//        if(!refresh_token){
-//             return next(new AppError(403, message));
-//        }
-//        //Validate refresh token
-//        const decoded = verifyJwt<{sub: string}>(
-//          refresh_token,
-//          'refreshTokenPublicKey'
-//        );
-//        if(!decoded){
-//            return next(new AppError(403, message));
-//        }
+// Refresh tokens
+const logout = (res: Response) => {
+  res.cookie('access_token', '', { maxAge: 1 });
+  res.cookie('refresh_token', '', { maxAge: 1 });
+  res.cookie('logged_in', '', {
+    maxAge: 1,
+  });
+};
 
-//        //Check if user has a valid session
-//        const session = await redisClient.get(decoded.sub);
-//        if(!session){
-//            return next(new AppError(403, message));
-//        }
+export const refreshAccessTokenHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Get the refresh token from cookie
+    const refresh_token = req.cookies.refresh_token as string;
 
-//        //Check if user still exist
-//        const user = await findUniqueUser({id: JSON.parse(session).id});
-//        if(!user){
-//            return next(new AppError(403, message));
-//        }
+    // Validate the Refresh token
+    const decoded = verifyJwt<{ sub: string }>(
+      refresh_token,
+      'refreshTokenPublicKey'
+    );
+    const message = 'Could not refresh access token';
+    if (!decoded) {
+      return next(new AppError(message, 403));
+    }
 
-//        //Sign new access token
-//        const access_token = signJwt({sub: user.id}, 'accessTokenPrivateKey', {
-//            expiresIn: `${config.get<number>('accessTokenExpiresIn')}m`,
-//        });
+    // Check if the user has a valid session
+    const session = await redisClient.get(decoded.sub);
+    if (!session) {
+      return next(new AppError(message, 403));
+    }
 
-//        //Add Cookies
-//        res.cookie('access_token', access_token, accessTokenCookieOptions);
-//        res.cookie('logged_in', true, {
-//            ...accessTokenCookieOptions,
-//            httpOnly: false
-//        });
+    // Check if the user exist
+    const user = await findUserById(JSON.parse(session)._id);
 
-//        //Send Response
-//        res.status(200).json({
-//            status: 'success',
-//            access_token
-//        });
-//    } catch (err: any) {
-//        next(err);
-//    }
-// };
+    if (!user) {
+      return next(new AppError(message, 403));
+    }
 
-// export const verifyEmailHandler = async(
-//     req: Request<VerifyEmailInput>,
-//     res: Response,
-//     next: NextFunction
-// ) => {
-//     try {
-//         const verificationCode = crypto
-//         .createHash('sha256')
-//         .update(req.params.verificationCode)
-//         .digest('hex');
+    // Sign new access token
+    const access_token = signJwt({ sub: user._id }, 'accessTokenPrivateKey', {
+      expiresIn: `${config.get<number>('accessTokenExpiresIn')}m`,
+    });
 
-//         const user = await updateUser(
-//             {verificationCode},
-//             {verified: true, verificationCode: null},
-//             {email: true}
-//         );
+    // Send the access token as cookie
+    res.cookie('access_token', access_token, accessTokenCookieOptions);
+    res.cookie('logged_in', true, {
+      ...accessTokenCookieOptions,
+      httpOnly: false,
+    });
 
-//         if(!user){
-//             return next(new AppError(401, 'Could not verify email'));
-//         }
+    // Send response
+    res.status(200).json({
+      status: 'success',
+      access_token,
+    });
+  } catch (err: any) {
+    next(err);
+  }
+};
 
-//         res.status(200).json({
-//             status: 'success',
-//             message: 'Email verified successfully',
-//           });
-
-//     } catch (err: any) {
-//         if (err.code === 'P2025') {
-//             return res.status(403).json({
-//               status: 'fail',
-//               message: `Verification code is invalid or user doesn't exist`,
-//             });
-//           }
-//           next(err);
-//         }   
-//     }
+export const logoutHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = res.locals.user;
+    await redisClient.del(user._id);
+    logout(res);
+    return res.status(200).json({ status: 'success' });
+  } catch (err: any) {
+    next(err);
+  }
+};

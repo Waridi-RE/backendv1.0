@@ -2,7 +2,7 @@
 
 import { Request, Response } from "express";
 import { NextFunction } from "express";
-import Image from "../schemas/image.schema";
+import Image from "../schemas/apartment.schema";
 import cloudinary from "../utils/cloudinary";
 
 export const singleFileUpload = async (
@@ -11,6 +11,7 @@ export const singleFileUpload = async (
     next: NextFunction) => {
     try {
        const result = await cloudinary.v2.uploader.upload(req.file?.path!);
+    // const image = await cloudinary.v2.uploader.upload(req.file?.path!);
        const newImage = new Image({
         first_name: req.body.first_name,
         other_names: req.body.other_names,
