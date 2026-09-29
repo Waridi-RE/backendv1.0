@@ -163,6 +163,40 @@ export const uploadApartment = async (req, res) => {
 }
 };
 
+export const createLand = async (req, res) => {
+  try {
+    const landTitle = typeof req.body.land_title === "string" ? req.body.land_title.trim() : "";
+    const landSize = Number(req.body.land_size);
+    const landPrice = Number(req.body.land_price);
+
+    if (!landTitle || !Number.isFinite(landSize) || landSize <= 0 || !Number.isFinite(landPrice) || landPrice <= 0) {
+      return res.status(400).json({ message: "Land title, a positive land size, and a positive price are required." });
+    }
+
+    const land = await Property.create({
+      agent_id: req.user.id,
+      apartment_name: landTitle,
+      apartment_type: "Land",
+      apartment_description: typeof req.body.description === "string" ? req.body.description.trim() : "",
+      apartment_price: String(landPrice),
+      land_price: String(landPrice),
+      land_size: String(landSize),
+      land_size_unit: req.body.land_size_unit,
+      land_use: req.body.land_use,
+      title_deed_status: req.body.title_deed_status,
+      land_currency: req.body.land_currency || "KES",
+      plot_number: req.body.plot_number,
+      road_access: req.body.road_access,
+      utilities_available: req.body.utilities_available,
+    });
+
+    return res.status(201).json(land);
+  } catch (error) {
+    console.error("Error creating land listing:", error);
+    return res.status(500).json({ message: "Unable to create land listing." });
+  }
+};
+
 const getPagination = (page, size) => {
   const limit = size ? +size : 3;
   const offset = page ? page * limit : 0;

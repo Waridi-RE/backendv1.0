@@ -62,6 +62,19 @@ const User = sequelize.define("users", {
     type: DataTypes.BOOLEAN,
     allowNull: true,
   },
+  two_factor_enabled: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
+  settings: {
+    type: DataTypes.JSONB,
+    allowNull: false,
+    defaultValue: {
+      emailNotifications: true,
+      weeklySummary: true,
+    },
+  },
   connectionsRequest: {
     type: DataTypes.ARRAY(DataTypes.INTEGER),
     allowNull: true,

@@ -47,12 +47,13 @@ export const upload = multer({
 }).array("files", 5);
 
 export const uploadApartment = async (req, res) => {
-  // try {
-    const { apartment_id, uploaded_by } = req.body;
+  try {
+    const propertyId = req.body.property_id || req.body.apartment_id;
+    const uploadedBy = req.user?.id || req.body.uploaded_by;
     const files = req.files;
 
-    if (!apartment_id || !uploaded_by) {
-      return res.status(400).json({ message: "apartment_id and uploaded_by are required" });
+    if (!propertyId || !uploadedBy) {
+      return res.status(400).json({ message: "property_id and uploaded_by are required" });
     }
 
     if (!files || files.length < 1) {
@@ -65,9 +66,9 @@ export const uploadApartment = async (req, res) => {
         : PRODUCTION_IMAGE_ADDRESS;
 
     const fileData = {
-      apartment_id,
-      uploaded_by,
-      file_size: files.reduce((total, file) => total + file.size, 0), 
+      property_id: propertyId,
+      uploaded_by: uploadedBy,
+      file_size: files.reduce((total, file) => total + file.size, 0),
     };
 
     if (files[0]) fileData.first_image = baseUrl + files[0].filename;
@@ -79,13 +80,13 @@ export const uploadApartment = async (req, res) => {
     const newApartment = await PropertyFiles.create(fileData);
 
     return res.status(201).json({
-      message: "Apartment files uploaded successfully",
+      message: "Property files uploaded successfully",
       data: newApartment,
     });
-  // } catch (error) {
-  //   console.error("Error saving apartment files:", error);
-  //   return res.status(500).json({ message: "Internal Server Error", error: error.message });
-  // }
+  } catch (error) {
+    console.error("Error saving property files:", error);
+    return res.status(500).json({ message: "Unable to save property files." });
+  }
 };
 
 export const getPagination = (page, size) => {

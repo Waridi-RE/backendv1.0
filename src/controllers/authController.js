@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { randomUUID } from "node:crypto";
 import bcryptjs from "bcryptjs";
 import { Op, literal, where } from "sequelize";
 import nodemailer from "nodemailer";
@@ -11,6 +12,7 @@ import User from "../models/authModel.js";
 import * as PasswordHelper from "../helpers/passwordHelper.js";
 import * as Helper from "../helpers/helper.js";
 import Otp from "../models/otpModel.js";
+import OtpSession from "../models/otpSessionModel.js";
 import { Authenticated } from "../middlewares/authorizationPermission.js";
 import Connection from "../models/connectionsModel.js";
 import Role from "../models/role.js";
@@ -125,7 +127,6 @@ export const Signup = async (req, res) => {
       purpose: "account_verification",
     });
 
-    // 8. Render OTP template (if using your existing welcome.ejs)
     const templatePath = path.join(__dirname, '../templates/layouts/registration-otp.ejs');
     const html = await ejs.renderFile(templatePath, {
       name: newUser.username || 'User',
@@ -133,11 +134,10 @@ export const Signup = async (req, res) => {
       expiryMinutes: 5,
     });
 
-    // 9. Publish email job with pre‑rendered HTML
     await publishEmailJob({
       to: newUser.email,
       subject: 'Verify Your Waridi Account',
-      html,        // 👈 rendered HTML
+      html,       
       text: `Your OTP is ${otpCode}. Please verify your email within 5 minutes.`,
     });
 
@@ -145,11 +145,125 @@ export const Signup = async (req, res) => {
     return res.status(201).json({
       message: 'User registered successfully. Please check your email for the OTP.',
       user: { id: newUser.id, email: newUser.email, username: newUser.username },
+      otpExpiresAt: expiresAt.getTime(),
+      otpResendAt: Date.now() + 2 * 60 * 1000,
     });
 
   } catch (err) {
     console.error('Signup error:', err);
     return res.status(500).json({ message: err.message || 'Internal server error' });
+  }
+};
+
+export const resendOtpVerification = async (req, res) => {
+  try {
+    const email = typeof req.body.email === "string" ? req.body.email.trim() : "";
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "Account not found." });
+    }
+    if (user.verified) {
+      return res.status(400).json({ message: "This account is already verified." });
+    }
+
+    const latestOtp = await Otp.findOne({
+      where: { email, purpose: "account_verification" },
+      order: [["createdAt", "DESC"]],
+    });
+    const now = Date.now();
+    const lastSentAt = latestOtp?.createdAt ? new Date(latestOtp.createdAt).getTime() : 0;
+    const resendAt = lastSentAt + 2 * 60 * 1000;
+    if (latestOtp && now < resendAt) {
+      return res.status(429).json({
+        message: "Please wait before requesting another verification code.",
+        otpResendAt: resendAt,
+      });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(now + 5 * 60 * 1000);
+    await Otp.destroy({ where: { email, purpose: "account_verification" } });
+    await Otp.create({
+      email,
+      code: otpCode,
+      createdAt: new Date(now),
+      expireIn: expiresAt,
+      purpose: "account_verification",
+    });
+
+    const templatePath = path.join(__dirname, "../templates/layouts/registration-otp.ejs");
+    const html = await ejs.renderFile(templatePath, {
+      name: user.username || "User",
+      otp: otpCode,
+      expiryMinutes: 5,
+    });
+    await publishEmailJob({
+      to: email,
+      subject: "Verify Your Waridi Account",
+      html,
+      text: `Your OTP is ${otpCode}. Please verify your email within 5 minutes.`,
+    });
+
+    return res.status(200).json({
+      message: "A new verification code has been sent.",
+      otpExpiresAt: expiresAt.getTime(),
+      otpResendAt: now + 2 * 60 * 1000,
+    });
+  } catch (error) {
+    console.error("Resend OTP error:", error);
+    return res.status(500).json({ message: "Unable to resend verification code." });
+  }
+};
+
+const defaultUserSettings = {
+  emailNotifications: true,
+  weeklySummary: true,
+};
+
+const requiresTwoFactor = (user) => [2, 3].includes(Number(user.roleId));
+
+export const getUserSettings = async (req, res) => {
+  const settings = { ...defaultUserSettings, ...(req.user.settings || {}) };
+  const twoFactorRequired = requiresTwoFactor(req.user);
+
+  return res.status(200).json({
+    twoFactorEnabled: twoFactorRequired || Boolean(req.user.two_factor_enabled),
+    twoFactorRequired,
+    notifications: settings,
+  });
+};
+
+export const updateUserSettings = async (req, res) => {
+  try {
+    const twoFactorRequired = requiresTwoFactor(req.user);
+    if (req.body.twoFactorEnabled === false && twoFactorRequired) {
+      return res.status(400).json({ message: "Two-factor authentication is required for agent and landlord accounts." });
+    }
+
+    if (typeof req.body.twoFactorEnabled === "boolean") {
+      req.user.two_factor_enabled = twoFactorRequired || req.body.twoFactorEnabled;
+    }
+
+    const requestedNotifications = req.body.notifications;
+    if (requestedNotifications && typeof requestedNotifications === "object" && !Array.isArray(requestedNotifications)) {
+      const currentSettings = { ...defaultUserSettings, ...(req.user.settings || {}) };
+      for (const key of Object.keys(defaultUserSettings)) {
+        if (typeof requestedNotifications[key] === "boolean") {
+          currentSettings[key] = requestedNotifications[key];
+        }
+      }
+      req.user.settings = currentSettings;
+    }
+
+    await req.user.save();
+    return getUserSettings(req, res);
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    return res.status(500).json({ message: "Unable to save settings." });
   }
 };
 
@@ -209,7 +323,9 @@ export const Signin = async (req, res) => {
       }
     }
 
-    if (user.roleId === 2 || user.roleId === 3) {
+    const agentOrLandlord = requiresTwoFactor(user);
+
+    if (agentOrLandlord) {
       const agentProfile = await AgentProfile.findOne({ where: { user_id: user.id } });
       const roleLabel = role.roleName === "LANDLORD" ? "landlord" : "agent";
       if (!agentProfile) {
@@ -241,16 +357,34 @@ export const Signin = async (req, res) => {
           msg: `Your ${roleLabel} onboarding is pending approval. Dashboard access will be enabled after approval.`,
         });
       }
+    }
 
+    if (agentOrLandlord || user.two_factor_enabled) {
+      const roleLabel = agentOrLandlord
+        ? role.roleName === "LANDLORD" ? "landlord" : "agent"
+        : (role.roleName || "user").toLowerCase();
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const createdAt = new Date();
+      const expiresAt = new Date(createdAt.getTime() + 5 * 60 * 1000);
+      const sessionExpiresAt = new Date(createdAt.getTime() + 15 * 60 * 1000);
+      const challengeId = randomUUID();
 
-      await Otp.create({
+      await OtpSession.update({ active: false }, { where: { email: user.email, active: true } });
+
+      const otpRecord = await Otp.create({
         email: user.email,
         code: otpCode,
-        createdAt: new Date(),
+        createdAt,
         expireIn: expiresAt,
         purpose: "agent_login",
+      });
+      await OtpSession.create({
+        challengeId,
+        otpId: otpRecord.id,
+        email: user.email,
+        createdAt,
+        expiresAt: sessionExpiresAt,
+        active: true,
       });
 
       const otpTemplatePath = path.join(__dirname, "../templates/layouts/agent-login-otp.ejs");
@@ -268,9 +402,13 @@ export const Signin = async (req, res) => {
       });
 
       return res.status(200).send({
-        message: `Login OTP sent to your email. Verify the code to complete ${roleLabel} login.`,
+        message: `Login OTP sent to your email. Verify the code to complete your ${roleLabel} login.`,
         requiresOtp: true,
+        challengeId,
         email: user.email,
+        otpExpiresAt: expiresAt.getTime(),
+        sessionExpiresAt: sessionExpiresAt.getTime(),
+        resendAt: createdAt.getTime() + 2 * 60 * 1000,
       });
     }
 
@@ -415,33 +553,45 @@ export const verifyOtpCode = async (req, res) => {
 };
 
 export const verifyAgentLoginOtp = async (req, res) => {
-  const { email, code } = req.body;
+  const { challengeId, code } = req.body;
 
   try {
+    const otpSession = await OtpSession.findOne({ where: { challengeId, active: true } });
+    if (!otpSession) {
+      return res.status(404).json({ message: "Login challenge not found or already used." });
+    }
+
+    if (new Date() >= otpSession.expiresAt) {
+      await otpSession.update({ active: false });
+      return res.status(410).json({ message: "Login challenge has expired. Please sign in again." });
+    }
+
     const otpRecord = await Otp.findOne({
-      where: { email, code, purpose: "agent_login" },
+      where: { id: otpSession.otpId, code, purpose: "agent_login" },
     });
 
     if (!otpRecord) {
-      return res.status(404).json({ message: "Invalid OTP or email not found." });
+      return res.status(400).json({ message: "Invalid verification code." });
     }
 
     const now = new Date();
-    const isExpired = otpRecord.expired || (otpRecord.expireIn && now > otpRecord.expireIn);
+    const isExpired = otpRecord.expired || !otpRecord.expireIn || now > otpRecord.expireIn;
 
     if (isExpired) {
       await otpRecord.update({ expired: true });
       return res.status(400).json({ message: "OTP has expired." });
     }
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: otpSession.email } });
     if (!user) {
       return res.status(404).json({ message: "User not found for this email." });
     }
 
-    const agentProfile = await AgentProfile.findOne({ where: { user_id: user.id } });
-    if (!agentProfile || agentProfile.agent_verified !== "APPROVED" || !agentProfile.is_agent_verified) {
-      return res.status(403).json({ message: "Agent access is not approved. Please wait for verification." });
+    if (requiresTwoFactor(user)) {
+      const agentProfile = await AgentProfile.findOne({ where: { user_id: user.id } });
+      if (!agentProfile || agentProfile.agent_verified !== "APPROVED" || !agentProfile.is_agent_verified) {
+        return res.status(403).json({ message: "Agent access is not approved. Please wait for verification." });
+      }
     }
 
     const role = await Role.findByPk(user.roleId);
@@ -461,6 +611,7 @@ export const verifyAgentLoginOtp = async (req, res) => {
 
     user.accessToken = refreshToken;
     await user.save();
+    await otpSession.update({ active: false });
     await otpRecord.destroy();
 
     res.cookie("refreshToken", refreshToken, {
@@ -483,6 +634,68 @@ export const verifyAgentLoginOtp = async (req, res) => {
   } catch (error) {
     console.error("Error verifying agent login OTP:", error);
     return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const resendAgentLoginOtp = async (req, res) => {
+  try {
+    const { challengeId } = req.body;
+    const otpSession = await OtpSession.findOne({ where: { challengeId, active: true } });
+    if (!otpSession) {
+      return res.status(404).json({ message: "Login challenge not found or already used." });
+    }
+
+    const now = Date.now();
+    const sessionExpiresAt = new Date(otpSession.expiresAt).getTime();
+    if (now >= sessionExpiresAt) {
+      await otpSession.update({ active: false });
+      return res.status(410).json({ message: "Login challenge has expired. Please sign in again." });
+    }
+
+    const previousOtp = await Otp.findByPk(otpSession.otpId);
+    const resendAt = previousOtp?.createdAt
+      ? new Date(previousOtp.createdAt).getTime() + 2 * 60 * 1000
+      : now;
+    if (previousOtp && now < resendAt) {
+      return res.status(429).json({ message: "Please wait before requesting another code.", resendAt });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const createdAt = new Date(now);
+    const otpExpiresAt = new Date(now + 5 * 60 * 1000);
+    const nextOtp = await Otp.create({
+      email: otpSession.email,
+      code,
+      createdAt,
+      expireIn: otpExpiresAt,
+      purpose: "agent_login",
+    });
+    if (previousOtp) await previousOtp.update({ expired: true });
+    await otpSession.update({ otpId: nextOtp.id });
+
+    const user = await User.findOne({ where: { email: otpSession.email } });
+    const otpTemplatePath = path.join(__dirname, "../templates/layouts/agent-login-otp.ejs");
+    const html = await ejs.renderFile(otpTemplatePath, {
+      name: user?.username || "Agent",
+      otp: code,
+      expiryMinutes: 5,
+    });
+    await publishEmailJob({
+      to: otpSession.email,
+      subject: "Your Waridi login OTP",
+      html,
+      text: `Your login OTP is ${code}. It expires in 5 minutes.`,
+    });
+
+    return res.status(200).json({
+      message: "A new login code has been sent.",
+      otpExpiresAt: otpExpiresAt.getTime(),
+      sessionExpiresAt,
+      resendAt: now + 2 * 60 * 1000,
+    });
+  } catch (error) {
+    console.error("Error resending agent login OTP:", error);
+    return res.status(500).json({ message: "Unable to resend verification code." });
   }
 };
 

@@ -32,6 +32,33 @@ const Property = sequelize.define("property", {
   apartment_previous_price: {
     type: DataTypes.STRING,
   },
+  land_size: {
+    type: DataTypes.STRING,
+  },
+  land_size_unit: {
+    type: DataTypes.STRING,
+  },
+  land_use: {
+    type: DataTypes.STRING,
+  },
+  title_deed_status: {
+    type: DataTypes.STRING,
+  },
+  land_price: {
+    type: DataTypes.STRING,
+  },
+  land_currency: {
+    type: DataTypes.STRING,
+  },
+  plot_number: {
+    type: DataTypes.STRING,
+  },
+  road_access: {
+    type: DataTypes.STRING,
+  },
+  utilities_available: {
+    type: DataTypes.STRING,
+  },
   address: {
     type: DataTypes.TEXT,
   },

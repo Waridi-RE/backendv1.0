@@ -9,6 +9,7 @@ router.post(
   apartmentController.upload,
   apartmentController.uploadApartment
 );
+router.post("/land", Authorization.Authenticated, apartmentController.createLand);
 router.get("/allproperty", apartmentController.getAllProperties);
 router.get("/properties", apartmentController.getAllProperties);
 router.get("/lands", apartmentController.getAllProperties);

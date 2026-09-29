@@ -9,7 +9,11 @@ import {
   upload,
   getSingleUser,
   verifyOtpCode,
+  resendOtpVerification,
+  getUserSettings,
+  updateUserSettings,
   verifyAgentLoginOtp,
+  resendAgentLoginOtp,
   sentConnectionRequest,
   receivedConnectionRequest,
   userConnections,
@@ -19,6 +23,7 @@ import {
 } from "../controllers/authController.js";
 
 import * as authController from "../controllers/authController.js";
+import { Authenticated } from "../middlewares/authorizationPermission.js";
 
 const router = express.Router();
 
@@ -28,7 +33,11 @@ router.post("/signup", Signup);
 router.post("/signin", Signin);
 router.put("/updateprofile/", authController.upload, updateUserProfile);
 router.post("/verify", verifyOtpCode);
+router.post("/resend-verification-code", resendOtpVerification);
+router.get("/settings", Authenticated, getUserSettings);
+router.patch("/settings", Authenticated, updateUserSettings);
 router.post("/verify-agent-login", verifyAgentLoginOtp);
+router.post("/resend-agent-login-otp", resendAgentLoginOtp);
 router.put("/changepassword/:id", changePassword);
 router.post("/forgotpassword", forgotPassword);
 router.get("/users", getAllUsers);

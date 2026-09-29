@@ -1,5 +1,10 @@
 node_modules/
 migrations/
+!migrations/
+migrations/*
+!migrations/20260929120000-create-otp-sessions.cjs
+!migrations/20260929130000-add-land-fields.cjs
+!migrations/20260929140000-add-user-settings-and-2fa.cjs
 .env
 Images/
 config/
